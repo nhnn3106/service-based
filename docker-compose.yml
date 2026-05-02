@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: micro-postgres
+    environment:
+      POSTGRES_DB: order_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5439:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+    container_name: user-service
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=order_service
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_URL=jdbc:postgresql://postgres:5432/order_service
+      - PORT=8081
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  food-service:
+    build:
+      context: .
+      dockerfile: foodserivce/Dockerfile
+    container_name: food-service
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=order_service
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_URL=jdbc:postgresql://postgres:5432/order_service
+      - PORT=8082
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - USER_SERVICE_URL=http://user-service:8081
+      - FOOD_SERVICE_URL=http://food-service:8082
+      - ORDER_SERVICE_URL=http://order-service:8083
+      - PAYMENT_SERVICE_URL=http://payment-service:8084
+    depends_on:
+      - user-service
+      - food-service
+      - order-service
+      - payment-service
+    networks:
+      - app-network
+
+  order-service:
+    build:
+      context: ./-KTPM-Lab07_ServiceBased
+      dockerfile: Dockerfile
+    container_name: order-service
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/order_service?schema=order_schema
+      - HOST=0.0.0.0
+      - PORT=8083
+      - FOOD_SERVICE_URL=http://food-service:8082
+      - USER_SERVICE_URL=http://user-service:8081
+      - PAYMENT_SERVICE_URL=http://payment-service:8084
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-notification-service/Dockerfile
+    container_name: payment-service
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/order_service
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - ORDER_HOST=order-service
+      - ORDER_PORT=8083
+      - PORT=8084
+    depends_on:
+      - postgres
+      - order-service
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Frontend/Dockerfile
+    container_name: frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
