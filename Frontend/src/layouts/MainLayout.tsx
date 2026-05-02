@@ -1,5 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import { serviceUrls } from "../services/env";
+import type { PaymentNotification } from "../types";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-full px-4 py-2 text-sm font-semibold transition ${
@@ -9,6 +12,82 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 export const MainLayout = () => {
   const { cart, user, clearAuth } = useAppContext();
   const navigate = useNavigate();
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<number | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
+
+  const getNumericId = (value: string | number) => {
+    if (typeof value === "number") return value;
+    const matched = value.match(/\d+/g)?.join("");
+    return matched ? Number(matched) : NaN;
+  };
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    if (toastTimeoutRef.current) {
+      window.clearTimeout(toastTimeoutRef.current);
+    }
+    toastTimeoutRef.current = window.setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    const userId = getNumericId(user.id);
+    const streamUrl =
+      Number.isNaN(userId) || !userId ?
+        `${serviceUrls.payment}/payments/stream`
+      : `${serviceUrls.payment}/payments/stream?userId=${userId}`;
+
+    let active = true;
+    let source: EventSource | null = null;
+
+    const handlePayment = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data) as PaymentNotification;
+        showToast(data.message || "Thanh toan thanh cong");
+      } catch {
+        showToast("Thanh toan thanh cong");
+      }
+    };
+
+    const connect = () => {
+      if (!active) return;
+      source = new EventSource(streamUrl);
+      source.addEventListener("payment", handlePayment as EventListener);
+      source.onerror = () => {
+        source?.close();
+        if (!active) return;
+        if (reconnectTimeoutRef.current) {
+          window.clearTimeout(reconnectTimeoutRef.current);
+        }
+        reconnectTimeoutRef.current = window.setTimeout(connect, 3000);
+      };
+    };
+
+    connect();
+
+    return () => {
+      active = false;
+      source?.close();
+      if (reconnectTimeoutRef.current) {
+        window.clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        window.clearTimeout(toastTimeoutRef.current);
+      }
+      if (reconnectTimeoutRef.current) {
+        window.clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleLogout = () => {
     clearAuth();
@@ -17,6 +96,13 @@ export const MainLayout = () => {
 
   return (
     <div className="min-h-screen bg-[#f7f2e8] text-slate-900">
+      {toastMessage ?
+        <div className="fixed right-6 top-6 z-50">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 shadow-soft">
+            {toastMessage}
+          </div>
+        </div>
+      : null}
       <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute -left-40 top-10 h-72 w-72 rounded-full bg-amber-200/60 blur-3xl" />
         <div className="pointer-events-none absolute -right-24 top-28 h-80 w-80 rounded-full bg-emerald-200/70 blur-[90px]" />

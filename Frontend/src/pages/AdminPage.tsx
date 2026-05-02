@@ -166,7 +166,7 @@ export const AdminPage = () => {
               Mo ta
               <textarea
                 className="mt-2 min-h-[80px] w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:border-amber-400 focus:outline-none"
-                value={form.description}
+                value={form.description ?? ""}
                 onChange={(event) =>
                   handleChange("description", event.target.value)
                 }

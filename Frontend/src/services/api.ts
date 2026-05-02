@@ -10,8 +10,7 @@ import type {
     UserProfile,
 } from '../types'
 
-const adminEmail = 'admin@chefhub.vn'
-const adminUser = usersMock.find((user) => user.email === adminEmail)
+// Unused admin variables removed for successful build
 
 let usersStore: UserProfile[] = [...usersMock]
 
@@ -29,8 +28,8 @@ const buildResponse = async <T>(
     data,
     status,
     statusText: 'OK',
-    headers: {},
-    config,
+    headers: config.headers as any,
+    config: config as any,
 })
 
 const mockAdapter: AxiosAdapter = async (config) => {

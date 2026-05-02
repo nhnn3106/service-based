@@ -1,5 +1,6 @@
 package iuh.fit.se.service;
 
+import iuh.fit.se.dto.PaymentNotification;
 import iuh.fit.se.dto.PaymentRequest;
 import iuh.fit.se.dto.PaymentResponse;
 import iuh.fit.se.dto.PaymentStatus;
@@ -26,6 +27,7 @@ public class PaymentService {
 
     private final RestTemplate restTemplate;
     private final PaymentRecordRepository paymentRecordRepository;
+    private final PaymentNotificationHub notificationHub;
 
     @Value("${order.service.host}")
     private String orderServiceHost;
@@ -33,9 +35,14 @@ public class PaymentService {
     @Value("${order.service.port:8083}")
     private int orderServicePort;
 
-    public PaymentService(RestTemplate restTemplate, PaymentRecordRepository paymentRecordRepository) {
+    public PaymentService(
+            RestTemplate restTemplate,
+            PaymentRecordRepository paymentRecordRepository,
+            PaymentNotificationHub notificationHub
+    ) {
         this.restTemplate = restTemplate;
         this.paymentRecordRepository = paymentRecordRepository;
+        this.notificationHub = notificationHub;
     }
 
     public PaymentResponse processPayment(PaymentRequest request) {
@@ -63,7 +70,15 @@ public class PaymentService {
         record.setStatus(PaymentStatus.SUCCESS);
         paymentRecordRepository.save(record);
 
-        // Step 4: Send notification by logging message.
+        // Step 5: Publish notification to frontend.
+        PaymentNotification notification = new PaymentNotification(
+            request.getOrderId(),
+            request.getUserId(),
+            PaymentStatus.SUCCESS,
+            "Thanh toan thanh cong"
+        );
+        notificationHub.publish(notification);
+
         LOGGER.info("User {} đã đặt đơn #{} thành công", request.getUserId(), request.getOrderId());
 
         return new PaymentResponse(PaymentStatus.SUCCESS, "Payment successful");

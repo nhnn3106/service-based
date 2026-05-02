@@ -1,0 +1,137 @@
+name: Monorepo CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api-gateway: ${{ steps.filter.outputs.api-gateway }}
+      food-service: ${{ steps.filter.outputs.food-service }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      order-service: ${{ steps.filter.outputs.order-service }}
+      payment-service: ${{ steps.filter.outputs.payment-service }}
+      user-service: ${{ steps.filter.outputs.user-service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api-gateway:
+              - 'api-gateway/**'
+            food-service:
+              - 'foodserivce/**'
+            frontend:
+              - 'Frontend/**'
+            order-service:
+              - '-KTPM-Lab07_ServiceBased/**'
+            payment-service:
+              - 'payment-notification-service/**'
+            user-service:
+              - 'UserService/**'
+
+  api-gateway:
+    needs: changes
+    if: ${{ needs.changes.outputs.api-gateway == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+      - name: Build with Maven
+        working-directory: ./api-gateway
+        run: mvn clean package -DskipTests
+
+  food-service:
+    needs: changes
+    if: ${{ needs.changes.outputs.food-service == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+      - name: Build with Maven
+        working-directory: ./foodserivce
+        run: mvn clean package -DskipTests
+
+  frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Frontend/package-lock.json
+      - name: Install & Build
+        working-directory: ./Frontend
+        run: |
+          npm ci
+          npm run build
+
+  order-service:
+    needs: changes
+    if: ${{ needs.changes.outputs.order-service == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: -KTPM-Lab07_ServiceBased/package-lock.json
+      - name: Install & Build
+        working-directory: ./-KTPM-Lab07_ServiceBased
+        run: |
+          npm ci
+          npx prisma generate
+          npm run build
+
+  payment-service:
+    needs: changes
+    if: ${{ needs.changes.outputs.payment-service == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+      - name: Build with Maven
+        working-directory: ./payment-notification-service
+        run: mvn clean package -DskipTests
+
+  user-service:
+    needs: changes
+    if: ${{ needs.changes.outputs.user-service == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+      - name: Build with Maven
+        working-directory: ./UserService
+        run: mvn clean package -DskipTests

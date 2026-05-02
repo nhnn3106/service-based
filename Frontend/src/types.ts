@@ -40,8 +40,9 @@ export type OrderRecord = {
     paymentMethod: 'cash' | 'bank'
     items: Array<{ id: number; quantity: number }>
     total: number
-    status: 'pending' | 'success' | 'fail'
+    status: 'pending' | 'success' | 'fail' | 'confirmed'
     createdAt: string
+    address?: string
 }
 
 export type PaymentRecord = {
@@ -64,6 +65,14 @@ export type PaymentRequest = {
 export type PaymentResponse = {
     status: 'SUCCESS'
     message: string
+}
+
+export type PaymentNotification = {
+    orderId: number
+    userId: number
+    status: 'SUCCESS' | 'FAIL' | 'PENDING'
+    message: string
+    createdAt: string
 }
 
 export type UserProfile = {

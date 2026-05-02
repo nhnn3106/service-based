@@ -25,13 +25,18 @@ const fetchJson = async <T>(
     path: string,
     options: RequestInit,
 ): Promise<T> => {
-    const response = await fetch(path, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-    })
+    let response: Response
+    try {
+        response = await fetch(path, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+        })
+    } catch {
+        throw new Error('Khong the ket noi den dich vu nguoi dung')
+    }
 
     if (!response.ok) {
         const message = await getErrorMessage(response)

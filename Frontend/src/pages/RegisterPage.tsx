@@ -15,6 +15,11 @@ export const RegisterPage = () => {
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
 
+    if (password.trim().length < 6) {
+      setStatus("Mat khau phai co it nhat 6 ky tu");
+      return;
+    }
+
     try {
       await authService.register(name, email, password);
       const successMessage =
@@ -24,8 +29,12 @@ export const RegisterPage = () => {
         replace: true,
         state: { statusMessage: successMessage },
       });
-    } catch {
-      setStatus("Khong the tao tai khoan, vui long thu lai");
+    } catch (error) {
+      const message =
+        error instanceof Error ?
+          error.message
+        : "Khong the tao tai khoan, vui long thu lai";
+      setStatus(message);
     }
   };
 
@@ -63,6 +72,7 @@ export const RegisterPage = () => {
               name="password"
               type="password"
               placeholder="Nhap mat khau"
+              minLength={6}
               required
             />
           </label>

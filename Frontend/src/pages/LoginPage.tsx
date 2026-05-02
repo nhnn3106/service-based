@@ -28,8 +28,12 @@ export const LoginPage = () => {
       navigate(result.user.role === "admin" ? "/admin" : "/", {
         replace: true,
       });
-    } catch {
-      setStatus("Khong the dang nhap, vui long thu lai");
+    } catch (error) {
+      const message =
+        error instanceof Error ?
+          error.message
+        : "Khong the dang nhap, vui long thu lai";
+      setStatus(message);
     }
   };
 

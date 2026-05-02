@@ -1,0 +1,69 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    discovery:
+      client:
+        simple:
+          instances:
+            user-service:
+              - uri: ${USER_SERVICE_URL:http://localhost:8081}
+            order-service:
+              - uri: ${ORDER_SERVICE_URL:http://localhost:8083}
+            food-service:
+              - uri: ${FOOD_SERVICE_URL:http://localhost:8082}
+            payment-service:
+              - uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+    gateway:
+      default-filters:
+        - name: Retry
+          args:
+            retries: 3
+            statuses: BAD_GATEWAY, GATEWAY_TIMEOUT, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE
+            methods: GET, POST, PUT, DELETE
+            backoff:
+              firstBackoff: 1s
+              maxBackoff: 1s
+              factor: 1
+
+      globalcors:
+        add-to-idm-strategy: true
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/orders/**
+        - id: food-service
+          uri: lb://food-service
+          predicates:
+            - Path=/foods/**
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/payments/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
