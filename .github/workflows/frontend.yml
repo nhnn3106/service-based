@@ -25,10 +25,10 @@ jobs:
         run: |
           npm install
           npm run build
-        working-directory: frontend-react # Đảm bảo trỏ đúng thư mục chứa React
+        working-directory: Frontend # Đảm bảo trỏ đúng thư mục chứa React
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: frontend-react/dist # Thư mục chứa file index.html sau khi build
+          folder: Frontend/dist # Thư mục chứa file index.html sau khi build
           branch: gh-pages # GitHub sẽ tự tạo nhánh này cho bạn
