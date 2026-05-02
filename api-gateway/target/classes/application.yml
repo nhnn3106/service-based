@@ -35,7 +35,9 @@ spring:
           '[/**]':
             allowedOriginPatterns: 
             - "http://localhost:80"
+            - "http://localhost:3000"
             - "https://nhnn3106.github.io"
+            - "http://${EC2_PUBLIC_IP:*}"
             allowedMethods:
               - GET
               - POST

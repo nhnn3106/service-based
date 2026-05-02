@@ -1,0 +1,112 @@
+name: Backend Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api-gateway/**'
+      - 'UserService/**'
+      - 'foodserivce/**'
+      - '-KTPM-Lab07_ServiceBased/**'
+      - 'payment-notification-service/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/backend.yml'
+  workflow_dispatch:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api-gateway: ${{ steps.filter.outputs.api-gateway }}
+      food-service: ${{ steps.filter.outputs.food-service }}
+      order-service: ${{ steps.filter.outputs.order-service }}
+      payment-service: ${{ steps.filter.outputs.payment-service }}
+      user-service: ${{ steps.filter.outputs.user-service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api-gateway:
+              - 'api-gateway/**'
+            food-service:
+              - 'foodserivce/**'
+            order-service:
+              - '-KTPM-Lab07_ServiceBased/**'
+            payment-service:
+              - 'payment-notification-service/**'
+            user-service:
+              - 'UserService/**'
+
+  build-java:
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api-gateway, food-service, payment-service, user-service]
+    steps:
+      - name: Check if service changed
+        id: check
+        run: |
+          if [ "${{ matrix.service }}" == "api-gateway" ] && [ "${{ needs.changes.outputs.api-gateway }}" == "true" ]; then echo "run=true" >> $GITHUB_OUTPUT; fi
+          if [ "${{ matrix.service }}" == "food-service" ] && [ "${{ needs.changes.outputs.food-service }}" == "true" ]; then echo "run=true" >> $GITHUB_OUTPUT; fi
+          if [ "${{ matrix.service }}" == "payment-service" ] && [ "${{ needs.changes.outputs.payment-service }}" == "true" ]; then echo "run=true" >> $GITHUB_OUTPUT; fi
+          if [ "${{ matrix.service }}" == "user-service" ] && [ "${{ needs.changes.outputs.user-service }}" == "true" ]; then echo "run=true" >> $GITHUB_OUTPUT; fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.run == 'true'
+      - name: Set up JDK 21
+        if: steps.check.outputs.run == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+      - name: Build with Maven
+        if: steps.check.outputs.run == 'true'
+        run: |
+          DIR=""
+          if [ "${{ matrix.service }}" == "api-gateway" ]; then DIR="api-gateway"; fi
+          if [ "${{ matrix.service }}" == "food-service" ]; then DIR="foodserivce"; fi
+          if [ "${{ matrix.service }}" == "payment-service" ]; then DIR="payment-notification-service"; fi
+          if [ "${{ matrix.service }}" == "user-service" ]; then DIR="UserService"; fi
+          cd $DIR
+          mvn clean package -DskipTests
+
+  build-node:
+    needs: changes
+    if: needs.changes.outputs.order-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: -KTPM-Lab07_ServiceBased/package-lock.json
+      - name: Install & Build
+        working-directory: ./-KTPM-Lab07_ServiceBased
+        run: |
+          npm ci
+          npx prisma generate
+          npm run build
+
+  deploy:
+    needs: [build-java, build-node]
+    if: always() && (needs.build-java.result == 'success' || needs.build-java.result == 'skipped') && (needs.build-node.result == 'success' || needs.build-node.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ${{ secrets.PROJECT_PATH }}
+            git pull origin main
+            # Truyền IP của EC2 vào môi trường để Docker Compose sử dụng (cho CORS)
+            export EC2_PUBLIC_IP=${{ secrets.EC2_HOST }}
+            docker-compose up -d --build postgres user-service food-service api-gateway order-service payment-service

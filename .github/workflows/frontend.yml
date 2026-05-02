@@ -29,6 +29,16 @@ jobs:
       - name: Install & Build
         run: |
           npm install
+          VITE_AUTH_HOST=${{ secrets.EC2_HOST }} \
+          VITE_AUTH_PORT=80 \
+          VITE_MENU_HOST=${{ secrets.EC2_HOST }} \
+          VITE_MENU_PORT=80 \
+          VITE_ORDER_HOST=${{ secrets.EC2_HOST }} \
+          VITE_ORDER_PORT=80 \
+          VITE_ADMIN_HOST=${{ secrets.EC2_HOST }} \
+          VITE_ADMIN_PORT=80 \
+          VITE_PAYMENT_HOST=${{ secrets.EC2_HOST }} \
+          VITE_PAYMENT_PORT=80 \
           npm run build
           cp dist/index.html dist/404.html
         working-directory: Frontend # Đảm bảo trỏ đúng thư mục chứa React
