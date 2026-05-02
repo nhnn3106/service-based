@@ -33,7 +33,9 @@ spring:
         add-to-idm-strategy: true
         cors-configurations:
           '[/**]':
-            allowedOriginPatterns: "http://localhost:5173"
+            allowedOriginPatterns: 
+            - "http://localhost:80"
+            - "https://nhnn3106.github.io"
             allowedMethods:
               - GET
               - POST

@@ -57,8 +57,9 @@ services:
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
     ports:
-      - "8080:8080"
+      - "80:80"
     environment:
+      - PORT=80
       - USER_SERVICE_URL=http://user-service:8081
       - FOOD_SERVICE_URL=http://food-service:8082
       - ORDER_SERVICE_URL=http://order-service:8083
@@ -112,7 +113,7 @@ services:
       dockerfile: Frontend/Dockerfile
     container_name: frontend
     ports:
-      - "5173:80"
+      - "80:80"
     depends_on:
       - api-gateway
     networks:
