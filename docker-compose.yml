@@ -64,7 +64,7 @@ services:
     image: ${DOCKER_USERNAME}/api-gateway:latest
     container_name: api-gateway
     ports:
-      - "80:80"
+      - "8080:80"
     environment:
       - PORT=80
       - EC2_PUBLIC_IP=${EC2_PUBLIC_IP}

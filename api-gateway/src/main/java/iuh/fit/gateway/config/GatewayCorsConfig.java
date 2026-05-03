@@ -22,7 +22,9 @@ public class GatewayCorsConfig {
             "http://localhost:5173", 
             "http://localhost",
             "http://192.168.1.8:5173",
-            "http://192.168.1.8"
+            "http://192.168.1.8",
+            "http://54.224.10.172",
+            "http://54.224.10.172:5173"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
