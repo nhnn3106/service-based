@@ -31,7 +31,8 @@ public class DeduplicateCorsFilter implements GlobalFilter, Ordered {
     private void removeDuplicateHeader(HttpHeaders headers, String headerName) {
         List<String> values = headers.get(headerName);
         if (values != null && values.size() > 1) {
-            // Lấy giá trị đầu tiên (thường là giá trị đúng từ service con hoặc gateway)
+            // Lấy giá trị đầu tiên (thường là giá sfsf trị đúng từ service con hoặc
+            // gateway)
             String firstValue = values.getFirst();
 
             // ĐÚNG: Sử dụng .set() thay vì .remove() và .add()
