@@ -19,6 +19,7 @@ services:
     build:
       context: .
       dockerfile: UserService/Dockerfile
+    image: ${DOCKER_USERNAME}/user-service:latest
     container_name: user-service
     env_file:
       - ./UserService/.env
@@ -39,6 +40,7 @@ services:
     build:
       context: .
       dockerfile: foodserivce/Dockerfile
+    image: ${DOCKER_USERNAME}/food-service:latest
     container_name: food-service
     env_file:
       - ./foodserivce/.env
@@ -59,6 +61,7 @@ services:
     build:
       context: .
       dockerfile: api-gateway/Dockerfile
+    image: ${DOCKER_USERNAME}/api-gateway:latest
     container_name: api-gateway
     ports:
       - "80:80"
@@ -81,6 +84,7 @@ services:
     build:
       context: ./-KTPM-Lab07_ServiceBased
       dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME}/order-service:latest
     container_name: order-service
     env_file:
       - ./-KTPM-Lab07_ServiceBased/.env
@@ -100,6 +104,7 @@ services:
     build:
       context: .
       dockerfile: payment-notification-service/Dockerfile
+    image: ${DOCKER_USERNAME}/payment-service:latest
     container_name: payment-service
     env_file:
       - ./payment-notification-service/.env
@@ -120,6 +125,7 @@ services:
     build:
       context: .
       dockerfile: Frontend/Dockerfile
+    image: ${DOCKER_USERNAME}/frontend:latest
     container_name: frontend
     ports:
       - "80:80"
