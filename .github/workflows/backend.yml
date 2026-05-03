@@ -18,10 +18,20 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Create dummy .env files
+        run: |
+          # Tạo các file .env trống để docker-compose build không bị lỗi (vì các file này thường bị gitignore)
+          mkdir -p ./UserService ./foodserivce ./-KTPM-Lab07_ServiceBased ./payment-notification-service
+          touch ./UserService/.env
+          touch ./foodserivce/.env
+          touch ./-KTPM-Lab07_ServiceBased/.env
+          touch ./payment-notification-service/.env
+
       - name: Build and Push all Docker Images
         run: |
           # Dùng máy chủ mạnh của GitHub để Build và Đẩy lên Docker Hub
           export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          export EC2_PUBLIC_IP=dummy  # Tránh warning khi build
           docker compose build
           docker compose push
 
